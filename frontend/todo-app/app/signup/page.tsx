@@ -3,136 +3,175 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
-import { validateEmail, validatePassword } from '@/lib/utils';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const { register, error: authError } = useAuth();
+  const [formErrors, setFormErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
+  const { register, error: authError, clearError, isLoading } = useAuth();
+
+  const validate = () => {
+    const errors: typeof formErrors = {};
+    if (!email) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) errors.email = 'Invalid email format';
+
+    if (!password) errors.password = 'Password is required';
+    else if (password.length < 6) errors.password = 'Password must be at least 6 characters';
+    else if (!/\d/.test(password)) errors.password = 'Password must contain at least one number';
+
+    if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
-    
-    // Validation
-    const newErrors: { [key: string]: string } = {};
-    
-    if (!validateEmail(email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      newErrors.password = passwordValidation.message || '';
-    }
-    
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setIsLoading(true);
+    clearError();
+    if (!validate()) return;
     try {
       await register({ email, password });
-    } catch (err) {
-      // Error is handled by AuthContext
-    } finally {
-      setIsLoading(false);
+    } catch {
+      // error handled in context
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              sign in to your account
-            </Link>
+        {/* Logo / Icon */}
+        <div className="flex justify-center">
+          <div className="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center border border-gray-700">
+            <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-white">Create your account</h2>
+          <p className="mt-2 text-sm text-gray-400">
+            Join TaskFlow to manage your tasks
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-            </div>
-            <div>
-              <label htmlFor="confirm-password" className="sr-only">
-                Confirm Password
-              </label>
-              <input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
-            </div>
-          </div>
 
-          {authError && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{authError}</p>
-            </div>
-          )}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-8">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              {/* Email Field */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (formErrors.email) setFormErrors({ ...formErrors, email: undefined });
+                  }}
+                  className={`w-full px-3 py-2 bg-gray-800 border ${
+                    formErrors.email ? 'border-red-700' : 'border-gray-700'
+                  } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all`}
+                  placeholder="you@example.com"
+                />
+                {formErrors.email && (
+                  <p className="mt-1 text-sm text-red-400">{formErrors.email}</p>
+                )}
+              </div>
 
-          <div>
+              {/* Password Field */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (formErrors.password) setFormErrors({ ...formErrors, password: undefined });
+                  }}
+                  className={`w-full px-3 py-2 bg-gray-800 border ${
+                    formErrors.password ? 'border-red-700' : 'border-gray-700'
+                  } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all`}
+                  placeholder="••••••••"
+                />
+                {formErrors.password && (
+                  <p className="mt-1 text-sm text-red-400">{formErrors.password}</p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div>
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-1">
+                  Confirm password
+                </label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (formErrors.confirmPassword) setFormErrors({ ...formErrors, confirmPassword: undefined });
+                  }}
+                  className={`w-full px-3 py-2 bg-gray-800 border ${
+                    formErrors.confirmPassword ? 'border-red-700' : 'border-gray-700'
+                  } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all`}
+                  placeholder="••••••••"
+                />
+                {formErrors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-400">{formErrors.confirmPassword}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Auth Error */}
+            {authError && (
+              <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg">
+                <p className="text-sm text-red-400">{authError}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {isLoading ? 'Creating account...' : 'Sign up'}
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-black border-t-transparent"></div>
+                  Creating account...
+                </div>
+              ) : (
+                'Sign up'
+              )}
             </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-400">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-medium text-white hover:underline focus:outline-none focus:ring-2 focus:ring-white"
+              >
+                Sign in
+              </Link>
+            </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

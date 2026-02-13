@@ -1,22 +1,25 @@
-from .user import User
-from .task import Task
+# src/models/__init__.py
+from .models import User, Task
 from .schemas import (
-    UserBase, UserCreate, UserLogin, User as UserSchema,
-    Token, TokenData,
-    TaskBase, TaskCreate, TaskUpdate, Task as TaskSchema
+    UserCreate,
+    UserLogin,
+    Token,
+    TokenData,
+    UserResponse,
+    TaskCreate,
+    TaskUpdate,
+    TaskResponse
 )
 
 __all__ = [
-    "User",
-    "Task",
-    "UserBase",
-    "UserCreate",
-    "UserLogin",
-    "UserSchema",
-    "Token",
-    "TokenData",
-    "TaskBase",
-    "TaskCreate",
-    "TaskUpdate",
-    "TaskSchema"
+    'User',
+    'Task',
+    'UserCreate',
+    'UserLogin',
+    'Token',
+    'TokenData',
+    'UserResponse',
+    'TaskCreate',
+    'TaskUpdate',
+    'TaskResponse'
 ]
