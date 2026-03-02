@@ -1,16 +1,18 @@
-// api/client.ts
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+// app/api/client.ts
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { AuthResponse, UserCreate, UserLogin, Task, TaskCreate, TaskUpdate } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+console.log('[API Client] Base URL:', API_BASE_URL);
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
+  timeout: 60000,
 });
 
-// Request interceptor
+// ─── Request Interceptor ───────────────────────────────────────────────────────
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
@@ -24,89 +26,85 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// ─── Response Interceptor ─────────────────────────────────────────────────────
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse) => {
+    // If our backend returns the standardized format, unwrap it for the rest of the app
+    if (response.data && response.data.success === true && response.data.data !== undefined) {
+      console.log(`[API] unwrapping:`, response.config.url);
+      return { ...response, data: response.data.data };
+    }
+    return response;
+  },
   (error: AxiosError) => {
-    // Log error for debugging
-    console.error('API Error:', {
-      message: error.message,
-      code: error.code,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-
-    // Handle timeout
-    if (error.code === 'ECONNABORTED') {
-      return Promise.reject(new Error('Request timeout. Server not responding.'));
-    }
-
-    // Network error (server down)
-    if (!error.response) {
-      return Promise.reject(new Error('Cannot connect to server. Please ensure backend is running.'));
-    }
-
-    // Handle 401 Unauthorized
-    if (error.response.status === 401) {
-      localStorage.removeItem('token');
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+    const extractMessage = (data: any): string => {
+      if (!data) return 'Server error';
+      if (typeof data === 'string') return data;
+      if (data.message) return data.message;
+      if (data.detail) {
+        if (typeof data.detail === 'string') return data.detail;
+        if (typeof data.detail === 'object') return data.detail.message || JSON.stringify(data.detail);
       }
-      return Promise.reject(new Error('Session expired. Please login again.'));
+      if (data.error && typeof data.error === 'object') return data.error.message || JSON.stringify(data.error);
+      return JSON.stringify(data);
+    };
+
+    if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+      return Promise.reject(new Error('Connection failed. Is the backend running?'));
     }
 
-    // Handle 403
-    if (error.response.status === 403) {
-      return Promise.reject(new Error('You do not have permission to perform this action.'));
+    if (error.response) {
+      const { status, data } = error.response;
+      const message = extractMessage(data);
+
+      if (status === 401) {
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+        return Promise.reject(new Error(message || 'Session expired'));
+      }
+
+      return Promise.reject(new Error(message || `Error ${status}`));
     }
 
-    // Handle 404
-    if (error.response.status === 404) {
-      return Promise.reject(new Error('Resource not found. Please check the URL.'));
-    }
-
-    // Handle 500
-    if (error.response.status >= 500) {
-      return Promise.reject(new Error('Server error. Please try again later.'));
-    }
-
-    // Extract message from response
-    const responseData = error.response.data as any;
-    let message = 'An error occurred.';
-    if (responseData?.detail) message = responseData.detail;
-    else if (responseData?.message) message = responseData.message;
-    else if (typeof responseData === 'string') message = responseData;
-    else message = `HTTP ${error.response.status}: ${error.response.statusText}`;
-
-    return Promise.reject(new Error(message));
+    return Promise.reject(error);
   }
 );
 
-// Auth API
+// ─── Auth API ─────────────────────────────────────────────────────────────────
 export const authAPI = {
-  register: (data: UserCreate) => apiClient.post<AuthResponse>('/api/register', data).then(res => res.data),
-  login: (data: UserLogin) => apiClient.post<AuthResponse>('/api/login', data).then(res => res.data),
+  register: (data: UserCreate) =>
+    apiClient.post('/api/register', data).then(res => res.data),
+  login: (data: UserLogin) =>
+    apiClient.post('/api/login', data).then(res => res.data),
 };
 
-// Tasks API
+// ─── Tasks API ────────────────────────────────────────────────────────────────
 export const tasksAPI = {
-  getTasks: () => apiClient.get<Task[]>('/api/tasks').then(res => res.data.map(task => ({
-    ...task,
-    description: task.description ?? undefined
-  }))),
-  createTask: (data: TaskCreate) => apiClient.post<Task>('/api/tasks', data).then(res => ({
-    ...res.data,
-    description: res.data.description ?? undefined
-  })),
-  updateTask: (id: number, data: TaskUpdate) => apiClient.put<Task>(`/api/tasks/${id}`, data).then(res => ({
-    ...res.data,
-    description: res.data.description ?? undefined
-  })),
-  deleteTask: (id: number) => apiClient.delete(`/api/tasks/${id}`),
-  toggleTask: (id: number) => apiClient.patch<Task>(`/api/tasks/${id}/toggle`).then(res => ({
-    ...res.data,
-    description: res.data.description ?? undefined
-  })),
+  getTasks: async (): Promise<Task[]> => {
+    const res = await apiClient.get<Task[]>('/api/tasks');
+    return res.data;
+  },
+
+  createTask: async (data: TaskCreate): Promise<Task> => {
+    const res = await apiClient.post<Task>('/api/tasks', data);
+    return res.data;
+  },
+
+  updateTask: async (id: number, data: TaskUpdate): Promise<Task> => {
+    const res = await apiClient.put<Task>(`/api/tasks/${id}`, data);
+    return res.data;
+  },
+
+  deleteTask: async (id: number): Promise<void> => {
+    await apiClient.delete(`/api/tasks/${id}`);
+  },
+
+  toggleTask: async (id: number): Promise<Task> => {
+    const res = await apiClient.patch<Task>(`/api/tasks/${id}/toggle`);
+    return res.data;
+  },
 };
 
 export default apiClient;

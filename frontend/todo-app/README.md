@@ -20,6 +20,107 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## AI Chat Feature
+
+This application includes an AI-powered Chat Assistant that helps you manage your tasks through natural language conversations.
+
+### Overview
+
+The AI Chat feature allows users to:
+- Create, update, and manage tasks using natural language
+- Get intelligent suggestions for task organization
+- View conversation history with persistent storage
+- Receive real-time responses with tool invocation feedback
+
+### Accessing the Chat
+
+Navigate to `/chat` after logging in to access the AI Chat Assistant:
+
+```
+http://localhost:3000/chat
+```
+
+### Usage Examples
+
+Here are some example interactions with the AI Chat Assistant:
+
+**Creating a Task:**
+```
+User: "Add a task to buy groceries tomorrow"
+Assistant: "I've added a task 'Buy groceries' scheduled for tomorrow."
+```
+
+**Managing Tasks:**
+```
+User: "Show me my pending tasks"
+Assistant: "You have 3 pending tasks: 1. Buy groceries (Due: Tomorrow)..."
+```
+
+**Updating Tasks:**
+```
+User: "Mark task 1 as completed"
+Assistant: "Task 1 has been marked as completed."
+```
+
+### Component Structure
+
+The chat feature is built with the following components:
+
+| Component | Description |
+|-----------|-------------|
+| `ChatPage` | Main chat page with state management |
+| `MessageList` | Displays all messages with auto-scroll |
+| `MessageBubble` | Individual message with role-based styling |
+| `ChatInput` | Input field with send functionality |
+| `ErrorAlert` | Error display with retry capability |
+| `LoadingSpinner` | Loading state indicator |
+
+### Environment Variables
+
+The chat feature requires the following environment variables:
+
+```bash
+# Backend API URL
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Application URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Create a `.env.local` file in the `frontend/todo-app` directory:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### Authentication
+
+The chat feature requires authentication. Users must:
+1. Log in via `/login` page
+2. Obtain a valid JWT token
+3. Token is automatically used for chat API requests
+
+### API Integration
+
+The chat integrates with the backend through:
+- `POST /api/{user_id}/chat` - Send message and get AI response
+- `GET /api/{user_id}/conversations/{id}` - Load conversation history
+
+### Screenshots Description
+
+**Chat Interface:**
+- Header with AI Chat Assistant branding
+- Message area with user (blue, right-aligned) and assistant (gray, left-aligned) messages
+- Input field at bottom with Send button
+- Error alerts appear at top with retry option
+
+**Message Bubble:**
+- User messages: Blue background, white text, right-aligned
+- Assistant messages: Gray background, dark text, left-aligned
+- Timestamps displayed below each message
+- Tool call indicators shown when actions are performed
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

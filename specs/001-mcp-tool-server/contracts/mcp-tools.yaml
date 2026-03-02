@@ -1,0 +1,713 @@
+# MCP Tool Contracts
+
+**Feature**: MCP Tool Server  
+**Branch**: `001-mcp-tool-server`  
+**Date**: 2026-02-22  
+**Purpose**: Define explicit tool schemas following MCP protocol
+
+---
+
+## Tool 1: add_task
+
+**Purpose**: Create a new task owned by the authenticated user
+
+### Tool Definition
+
+```yaml
+name: add_task
+description: Create a new task with title, optional description, and optional due date
+version: 1.0.0
+```
+
+### Input Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Task title or brief description"
+    },
+    "description": {
+      "type": ["string", "null"],
+      "maxLength": 2000,
+      "description": "Detailed task description (optional)"
+    },
+    "due_date": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Task due date in ISO 8601 format (optional)"
+    }
+  },
+  "required": ["title"],
+  "additionalProperties": false
+}
+```
+
+### Output Schema (Success)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "due_date": { "type": ["string", "null"], "format": "date-time" },
+        "completed": { "type": "boolean", "const": false },
+        "completed_at": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "user_id": { "type": "integer" }
+      },
+      "required": ["task_id", "title", "completed", "created_at", "updated_at", "user_id"]
+    },
+    "error": { "type": "null" }
+  },
+  "required": ["success", "data", "error"]
+}
+```
+
+### Error Responses
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Validation failed: title is required and must be 1-500 characters",
+    "details": {
+      "field": "title",
+      "reason": "min_length"
+    }
+  }
+}
+```
+
+### Example Invocation
+
+**Request**:
+```json
+{
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread, vegetables",
+  "due_date": "2026-02-25T18:00:00Z"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": 123,
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread, vegetables",
+    "due_date": "2026-02-25T18:00:00Z",
+    "completed": false,
+    "completed_at": null,
+    "created_at": "2026-02-22T10:30:00Z",
+    "updated_at": "2026-02-22T10:30:00Z",
+    "user_id": 456
+  },
+  "error": null
+}
+```
+
+---
+
+## Tool 2: list_tasks
+
+**Purpose**: Retrieve all tasks belonging to the authenticated user
+
+### Tool Definition
+
+```yaml
+name: list_tasks
+description: List all tasks owned by the authenticated user, optionally filtered by status
+version: 1.0.0
+```
+
+### Input Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": ["string", "null"],
+      "enum": ["active", "completed", null],
+      "description": "Filter tasks by status (optional)"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Schema (Success)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task_id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "due_date": { "type": ["string", "null"], "format": "date-time" },
+          "completed": { "type": "boolean" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "user_id": { "type": "integer" }
+        },
+        "required": ["task_id", "title", "completed", "created_at", "updated_at", "user_id"]
+      }
+    },
+    "error": { "type": "null" }
+  },
+  "required": ["success", "data", "error"]
+}
+```
+
+### Error Responses
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Invalid status filter. Must be 'active', 'completed', or null",
+    "details": {
+      "field": "status",
+      "reason": "invalid_enum"
+    }
+  }
+}
+```
+
+### Example Invocation
+
+**Request** (no filter):
+```json
+{}
+```
+
+**Request** (active only):
+```json
+{
+  "status": "active"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "task_id": 123,
+      "title": "Buy groceries",
+      "description": "Milk, eggs, bread",
+      "due_date": "2026-02-25T18:00:00Z",
+      "completed": false,
+      "completed_at": null,
+      "created_at": "2026-02-22T10:30:00Z",
+      "updated_at": "2026-02-22T10:30:00Z",
+      "user_id": 456
+    },
+    {
+      "task_id": 124,
+      "title": "Finish report",
+      "description": null,
+      "due_date": null,
+      "completed": true,
+      "completed_at": "2026-02-21T15:00:00Z",
+      "created_at": "2026-02-20T09:00:00Z",
+      "updated_at": "2026-02-21T15:00:00Z",
+      "user_id": 456
+    }
+  ],
+  "error": null
+}
+```
+
+---
+
+## Tool 3: update_task
+
+**Purpose**: Update an existing task's properties
+
+### Tool Definition
+
+```yaml
+name: update_task
+description: Update title, description, or due date of an existing task
+version: 1.0.0
+```
+
+### Input Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the task to update"
+    },
+    "title": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "New title (optional)"
+    },
+    "description": {
+      "type": ["string", "null"],
+      "maxLength": 2000,
+      "description": "New description (optional)"
+    },
+    "due_date": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "New due date (optional)"
+    }
+  },
+  "required": ["task_id"],
+  "additionalProperties": false
+}
+```
+
+### Output Schema (Success)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "due_date": { "type": ["string", "null"], "format": "date-time" },
+        "completed": { "type": "boolean" },
+        "completed_at": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "user_id": { "type": "integer" }
+      },
+      "required": ["task_id", "title", "completed", "created_at", "updated_at", "user_id"]
+    },
+    "error": { "type": "null" }
+  },
+  "required": ["success", "data", "error"]
+}
+```
+
+### Error Responses
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "TASK_NOT_FOUND",
+    "message": "Task with ID 789 was not found",
+    "details": {
+      "task_id": 789
+    }
+  }
+}
+```
+
+### Example Invocation
+
+**Request**:
+```json
+{
+  "task_id": 123,
+  "title": "Buy organic groceries",
+  "due_date": "2026-02-26T18:00:00Z"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": 123,
+    "title": "Buy organic groceries",
+    "description": "Milk, eggs, bread, vegetables",
+    "due_date": "2026-02-26T18:00:00Z",
+    "completed": false,
+    "completed_at": null,
+    "created_at": "2026-02-22T10:30:00Z",
+    "updated_at": "2026-02-22T11:00:00Z",
+    "user_id": 456
+  },
+  "error": null
+}
+```
+
+---
+
+## Tool 4: complete_task
+
+**Purpose**: Toggle task completion status
+
+### Tool Definition
+
+```yaml
+name: complete_task
+description: Mark a task as completed or incomplete (toggle)
+version: 1.0.0
+```
+
+### Input Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the task to complete"
+    }
+  },
+  "required": ["task_id"],
+  "additionalProperties": false
+}
+```
+
+### Output Schema (Success)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "due_date": { "type": ["string", "null"], "format": "date-time" },
+        "completed": { "type": "boolean" },
+        "completed_at": { "type": ["string", "null"], "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "user_id": { "type": "integer" }
+      },
+      "required": ["task_id", "title", "completed", "created_at", "updated_at", "user_id"]
+    },
+    "error": { "type": "null" }
+  },
+  "required": ["success", "data", "error"]
+}
+```
+
+### Error Responses
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "TASK_NOT_FOUND",
+    "message": "Task with ID 789 was not found",
+    "details": {
+      "task_id": 789
+    }
+  }
+}
+```
+
+### Example Invocation
+
+**Request**:
+```json
+{
+  "task_id": 123
+}
+```
+
+**Response** (first completion):
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": 123,
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread",
+    "due_date": "2026-02-25T18:00:00Z",
+    "completed": true,
+    "completed_at": "2026-02-22T12:00:00Z",
+    "created_at": "2026-02-22T10:30:00Z",
+    "updated_at": "2026-02-22T12:00:00Z",
+    "user_id": 456
+  },
+  "error": null
+}
+```
+
+**Response** (toggle back to incomplete):
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": 123,
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread",
+    "due_date": "2026-02-25T18:00:00Z",
+    "completed": false,
+    "completed_at": null,
+    "created_at": "2026-02-22T10:30:00Z",
+    "updated_at": "2026-02-22T12:30:00Z",
+    "user_id": 456
+  },
+  "error": null
+}
+```
+
+---
+
+## Tool 5: delete_task
+
+**Purpose**: Permanently delete a task
+
+### Tool Definition
+
+```yaml
+name: delete_task
+description: Permanently delete a task (irreversible operation)
+version: 1.0.0
+```
+
+### Input Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the task to delete"
+    }
+  },
+  "required": ["task_id"],
+  "additionalProperties": false
+}
+```
+
+### Output Schema (Success)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "deleted_task_id": { "type": "integer" },
+        "title": { "type": "string" },
+        "deleted_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["deleted_task_id", "title", "deleted_at"]
+    },
+    "error": { "type": "null" }
+  },
+  "required": ["success", "data", "error"]
+}
+```
+
+### Error Responses
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "TASK_NOT_FOUND",
+    "message": "Task with ID 789 was not found",
+    "details": {
+      "task_id": 789
+    }
+  }
+}
+```
+
+### Example Invocation
+
+**Request**:
+```json
+{
+  "task_id": 123
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "deleted_task_id": 123,
+    "title": "Buy groceries",
+    "deleted_at": "2026-02-22T13:00:00Z"
+  },
+  "error": null
+}
+```
+
+---
+
+## Common Error Response Format
+
+All tools use standardized error responses:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable message",
+    "details": {
+      "field_specific": "details"
+    }
+  }
+}
+```
+
+### Error Code Reference
+
+| Code | HTTP Status | When Returned |
+|------|-------------|---------------|
+| `INVALID_INPUT` | 400 | Schema validation failed |
+| `UNAUTHORIZED` | 401 | JWT missing, expired, or invalid |
+| `TASK_NOT_FOUND` | 404 | Task doesn't exist or user lacks ownership |
+| `FORBIDDEN` | 403 | Operation not allowed (e.g., update user_id) |
+| `DATABASE_ERROR` | 500 | Database operation failed |
+
+### Example: Validation Error
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Validation failed: title must be at least 1 character",
+    "details": {
+      "field": "title",
+      "reason": "min_length",
+      "min_length": 1,
+      "provided_length": 0
+    }
+  }
+}
+```
+
+### Example: Unauthorized Error
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required: invalid or expired token",
+    "details": {
+      "reason": "token_expired"
+    }
+  }
+}
+```
+
+### Example: Task Not Found Error
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "TASK_NOT_FOUND",
+    "message": "The requested task was not found",
+    "details": {
+      "task_id": 999
+    }
+  }
+}
+```
+
+**Security Note**: Same error message for "task doesn't exist" and "task belongs to another user" to prevent information disclosure.
+
+---
+
+## Authentication Requirements
+
+All tool invocations require:
+
+1. **JWT Token**: Passed in `Authorization: Bearer <token>` header
+2. **Valid Signature**: Token signed with server's secret key
+3. **Not Expired**: `exp` claim in future
+4. **Valid User**: `user_id` claim present and valid
+
+**Token Extraction** (handled by MCP server, not tool input):
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**User Isolation**: All database queries automatically filtered by authenticated `user_id`.
+
+---
+
+## Next Steps
+
+1. Create `quickstart.md` with setup and usage instructions
+2. Run `/sp.tasks` to break implementation into actionable tasks
+3. Implement tools following task order

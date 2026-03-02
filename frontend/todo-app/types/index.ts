@@ -7,6 +7,8 @@ export interface Task {
   id: number;
   title: string;
   description?: string;
+  due_date?: string;
+  priority?: 'low' | 'medium' | 'high';
   completed: boolean;
   user_id: number;
   created_at: string;
@@ -31,11 +33,15 @@ export interface UserLogin {
 export interface TaskCreate {
   title: string;
   description?: string;
+  due_date?: string;
+  priority?: 'low' | 'medium' | 'high';
   completed?: boolean;
 }
 
 export interface TaskUpdate {
   title?: string;
   description?: string;
+  due_date?: string;
+  priority?: 'low' | 'medium' | 'high';
   completed?: boolean;
 }

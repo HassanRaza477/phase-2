@@ -4,12 +4,15 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from ..models.models import User
+from ..models import User
 from ..models.schemas import UserCreate, UserLogin, Token
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
@@ -63,8 +66,9 @@ class AuthService:
                 return None
 
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            # Use user ID as the subject (sub) claim for consistency
             access_token = AuthService.create_access_token(
-                data={"sub": db_user.email, "user_id": db_user.id},
+                data={"sub": str(db_user.id), "email": db_user.email},
                 expires_delta=access_token_expires
             )
             return Token(access_token=access_token)
@@ -84,14 +88,18 @@ class AuthService:
     def get_current_user(db: Session, token: str) -> Optional[User]:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            if email is None:
+            user_id_str: str = payload.get("sub")
+            if user_id_str is None:
                 return None
-        except JWTError:
+            # Convert to int since we store user ID as string in JWT
+            user_id = int(user_id_str)
+        except (JWTError, ValueError, TypeError) as e:
+            logger.error(f"Token decode error: {e}")
             return None
 
         try:
-            user = db.query(User).filter(User.email == email).first()
+            user = db.query(User).filter(User.id == user_id).first()
             return user
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
+            logger.error(f"DB error fetching user: {e}")
             return None

@@ -42,30 +42,30 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#FCFAEF] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Logo / Icon */}
         <div className="flex justify-center">
-          <div className="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center border border-gray-700">
-            <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center border-2 border-[#DBD0BD] shadow-md">
+            <svg className="h-8 w-8 text-[#0C5446]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
         </div>
 
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-white">Create your account</h2>
-          <p className="mt-2 text-sm text-gray-400">
+          <h2 className="text-3xl font-extrabold text-[#0C5446]">Create your account</h2>
+          <p className="mt-2 text-sm text-[#0C5446]/70">
             Join TaskFlow to manage your tasks
           </p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-8">
+        <div className="bg-white border border-[#DBD0BD] rounded-xl shadow-lg p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-[#0C5446] mb-1">
                   Email address
                 </label>
                 <input
@@ -77,19 +77,19 @@ export default function SignupPage() {
                     setEmail(e.target.value);
                     if (formErrors.email) setFormErrors({ ...formErrors, email: undefined });
                   }}
-                  className={`w-full px-3 py-2 bg-gray-800 border ${
-                    formErrors.email ? 'border-red-700' : 'border-gray-700'
-                  } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all`}
+                  className={`w-full px-3 py-2 bg-[#FCFAEF] border ${
+                    formErrors.email ? 'border-red-400' : 'border-[#DBD0BD]'
+                  } rounded-lg text-[#0C5446] placeholder-[#0C5446]/40 focus:outline-none focus:ring-2 focus:ring-[#FF6700] focus:border-transparent transition-all`}
                   placeholder="you@example.com"
                 />
                 {formErrors.email && (
-                  <p className="mt-1 text-sm text-red-400">{formErrors.email}</p>
+                  <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>
                 )}
               </div>
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-[#0C5446] mb-1">
                   Password
                 </label>
                 <input
@@ -101,19 +101,22 @@ export default function SignupPage() {
                     setPassword(e.target.value);
                     if (formErrors.password) setFormErrors({ ...formErrors, password: undefined });
                   }}
-                  className={`w-full px-3 py-2 bg-gray-800 border ${
-                    formErrors.password ? 'border-red-700' : 'border-gray-700'
-                  } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all`}
+                  className={`w-full px-3 py-2 bg-[#FCFAEF] border ${
+                    formErrors.password ? 'border-red-400' : 'border-[#DBD0BD]'
+                  } rounded-lg text-[#0C5446] placeholder-[#0C5446]/40 focus:outline-none focus:ring-2 focus:ring-[#FF6700] focus:border-transparent transition-all`}
                   placeholder="••••••••"
                 />
                 {formErrors.password && (
-                  <p className="mt-1 text-sm text-red-400">{formErrors.password}</p>
+                  <p className="mt-1 text-sm text-red-500">{formErrors.password}</p>
                 )}
+                <p className="mt-1 text-xs text-[#0C5446]/60">
+                  Must be at least 6 characters with at least one number
+                </p>
               </div>
 
               {/* Confirm Password Field */}
               <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-[#0C5446] mb-1">
                   Confirm password
                 </label>
                 <input
@@ -125,21 +128,21 @@ export default function SignupPage() {
                     setConfirmPassword(e.target.value);
                     if (formErrors.confirmPassword) setFormErrors({ ...formErrors, confirmPassword: undefined });
                   }}
-                  className={`w-full px-3 py-2 bg-gray-800 border ${
-                    formErrors.confirmPassword ? 'border-red-700' : 'border-gray-700'
-                  } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all`}
+                  className={`w-full px-3 py-2 bg-[#FCFAEF] border ${
+                    formErrors.confirmPassword ? 'border-red-400' : 'border-[#DBD0BD]'
+                  } rounded-lg text-[#0C5446] placeholder-[#0C5446]/40 focus:outline-none focus:ring-2 focus:ring-[#FF6700] focus:border-transparent transition-all`}
                   placeholder="••••••••"
                 />
                 {formErrors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-400">{formErrors.confirmPassword}</p>
+                  <p className="mt-1 text-sm text-red-500">{formErrors.confirmPassword}</p>
                 )}
               </div>
             </div>
 
             {/* Auth Error */}
             {authError && (
-              <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg">
-                <p className="text-sm text-red-400">{authError}</p>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{authError}</p>
               </div>
             )}
 
@@ -147,11 +150,11 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-[#FF6700] hover:bg-[#e55c00] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#FF6700] transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-black border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   Creating account...
                 </div>
               ) : (
@@ -161,11 +164,11 @@ export default function SignupPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#0C5446]/70">
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="font-medium text-white hover:underline focus:outline-none focus:ring-2 focus:ring-white"
+                className="font-medium text-[#FF6700] hover:text-[#e55c00] hover:underline focus:outline-none focus:ring-2 focus:ring-[#FF6700] rounded"
               >
                 Sign in
               </Link>

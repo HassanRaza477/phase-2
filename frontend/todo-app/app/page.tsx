@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './context/AuthContext';
+import LandingPage from './components/home';
+import Header from './components/Header';
 
 export default function HomePage() {
   const router = useRouter();
@@ -13,14 +15,15 @@ export default function HomePage() {
       if (isAuthenticated) {
         router.push('/dashboard');
       } else {
-        router.push('/login');
+        router.push('/');
       }
     }
   }, [isAuthenticated, isLoading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
+    <>
+
+    <Header/>
+    <LandingPage /></>
   );
 }

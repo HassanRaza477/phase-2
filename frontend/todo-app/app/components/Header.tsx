@@ -1,25 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
+import { useAuth } from '../context/AuthContext';
 
-interface User {
-  name: string;
-  email?: string;
-  avatar?: string; // URL to avatar image
-}
-
-interface HeaderProps {
-  onLogout: () => void;
-  user?: User; // optional – if not provided, shows only logout button
-  onSettings?: () => void; // optional callback for settings
-}
-
-export default function Header({ onLogout, user, onSettings }: HeaderProps) {
+export default function Header() {
+  const { isAuthenticated, user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -35,25 +25,16 @@ export default function Header({ onLogout, user, onSettings }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close dropdown on Escape key
-  useEffect(() => {
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setIsDropdownOpen(false);
-    }
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
-
   return (
-    <nav className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-800/50 shadow-lg">
+    <nav className="sticky top-0 z-50 bg-[#FCFAEF] border-b border-[#DBD0BD] shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo + App Name */}
-          <div className="flex items-center space-x-3 group">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur opacity-70 group-hover:opacity-100 transition duration-300" />
+              <div className="absolute inset-0 bg-[#FF6700] rounded-lg blur opacity-40 group-hover:opacity-60 transition duration-300" />
               <svg
-                className="relative h-8 w-8 text-white transform group-hover:scale-110 transition-transform duration-200"
+                className="relative h-8 w-8 text-[#0C5446] transform group-hover:scale-110 transition-transform duration-200"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -62,48 +43,54 @@ export default function Header({ onLogout, user, onSettings }: HeaderProps) {
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold text-[#0C5446]">
               TaskFlow
             </h1>
-          </div>
+          </Link>
 
-          {/* Right side – User menu or simple logout */}
-          {user ? (
-            <div className="flex items-center space-x-4">
-              {/* New Task Button (optional – you can move this elsewhere) */}
-              <button className="hidden sm:flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900">
-                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Link
+                href="/chat"
+                className="px-3 py-2 text-sm font-medium text-[#0C5446] hover:text-[#FF6700] transition flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                 </svg>
-                New Task
-              </button>
+                <span className="hidden md:inline">Chat</span>
+              </Link>
+              <Link
+                href="/dashboard"
+                className="hidden sm:flex px-4 py-2 text-sm font-medium text-white bg-[#FF6700] rounded-lg hover:bg-[#e55c00] transition items-center gap-2 shadow-sm"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Dashboard
+              </Link>
 
-              {/* User menu */}
               <div className="relative">
                 <button
                   ref={buttonRef}
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 rounded-full"
-                  aria-expanded={isDropdownOpen}
-                  aria-haspopup="true"
-                  aria-label="User menu"
+                  className="flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-[#FF6700] focus:ring-offset-2 focus:ring-offset-[#FCFAEF] rounded-full"
                 >
-                  {user.avatar ? (
+                  {user?.avatar ? (
                     <img
                       src={user.avatar}
                       alt={user.name}
-                      className="h-8 w-8 rounded-full ring-2 ring-gray-700 hover:ring-white transition-all duration-200 object-cover"
+                      className="h-8 w-8 rounded-full ring-2 ring-[#DBD0BD] hover:ring-[#FF6700] transition object-cover"
                     />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-gray-700 hover:ring-white transition-all duration-200">
-                      {user.name.charAt(0).toUpperCase()}
+                    <div className="h-8 w-8 rounded-full bg-[#0C5446] flex items-center justify-center text-white font-semibold text-sm ring-2 ring-[#DBD0BD] hover:ring-[#FF6700] transition">
+                      {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                   )}
-                  <span className="hidden md:block text-sm font-medium text-white">
-                    {user.name}
+                  <span className="hidden md:block text-sm font-medium text-[#0C5446]">
+                    {user?.name || 'User'}
                   </span>
                   <svg
-                    className={`hidden md:block w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                    className={`hidden md:block w-4 h-4 text-[#0C5446] transition-transform duration-200 ${
                       isDropdownOpen ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -114,39 +101,23 @@ export default function Header({ onLogout, user, onSettings }: HeaderProps) {
                   </svg>
                 </button>
 
-                {/* Dropdown menu */}
                 {isDropdownOpen && (
                   <div
                     ref={dropdownRef}
-                    className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-800 border border-gray-700 shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
-                    role="menu"
-                    aria-orientation="vertical"
+                    className="absolute right-0 mt-2 w-48 rounded-lg bg-[#FCFAEF] border border-[#DBD0BD] shadow-xl py-1 z-50"
                   >
-                    <div className="px-4 py-2 border-b border-gray-700">
-                      <p className="text-sm font-medium text-white">{user.name}</p>
-                      {user.email && (
-                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    <div className="px-4 py-2 border-b border-[#DBD0BD]">
+                      <p className="text-sm font-medium text-[#0C5446]">{user?.name}</p>
+                      {user?.email && (
+                        <p className="text-xs text-[#0C5446]/70 truncate">{user.email}</p>
                       )}
                     </div>
-                    {onSettings && (
-                      <button
-                        onClick={() => {
-                          onSettings();
-                          setIsDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-150"
-                        role="menuitem"
-                      >
-                        Settings
-                      </button>
-                    )}
                     <button
                       onClick={() => {
-                        onLogout();
+                        logout();
                         setIsDropdownOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors duration-150"
-                      role="menuitem"
+                      className="w-full text-left px-4 py-2 text-sm text-[#FF6700] hover:bg-[#DBD0BD] hover:text-[#0C5446] transition"
                     >
                       Logout
                     </button>
@@ -155,13 +126,20 @@ export default function Header({ onLogout, user, onSettings }: HeaderProps) {
               </div>
             </div>
           ) : (
-            /* Simple logout button (fallback when no user) */
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 text-sm font-medium text-black bg-white rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 shadow-md"
-            >
-              Logout
-            </button>
+            <div className="flex items-center space-x-3">
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-medium text-[#0C5446] border border-[#DBD0BD] rounded-lg hover:bg-[#DBD0BD] transition"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="px-4 py-2 text-sm font-medium text-white bg-[#FF6700] rounded-lg hover:bg-[#e55c00] hover:scale-105 transition shadow-md"
+              >
+                Sign Up
+              </Link>
+            </div>
           )}
         </div>
       </div>
