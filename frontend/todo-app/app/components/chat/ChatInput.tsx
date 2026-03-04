@@ -2,7 +2,7 @@
 
 import React, { useState, KeyboardEvent, ChangeEvent, useRef, useEffect } from 'react';
 import { ChatInputProps } from '@/types/chat';
-import { Send, Command } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 /**
  * ChatInput Component

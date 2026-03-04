@@ -1,6 +1,6 @@
 // app/api/client.ts
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { AuthResponse, UserCreate, UserLogin, Task, TaskCreate, TaskUpdate } from '@/types';
+import { UserCreate, UserLogin, Task, TaskCreate, TaskUpdate } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -37,15 +37,23 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    const extractMessage = (data: any): string => {
+    const extractMessage = (data: unknown): string => {
       if (!data) return 'Server error';
       if (typeof data === 'string') return data;
-      if (data.message) return data.message;
-      if (data.detail) {
-        if (typeof data.detail === 'string') return data.detail;
-        if (typeof data.detail === 'object') return data.detail.message || JSON.stringify(data.detail);
+      
+      const dataObj = data as Record<string, unknown>;
+      if (dataObj.message && typeof dataObj.message === 'string') return dataObj.message;
+      if (dataObj.detail) {
+        if (typeof dataObj.detail === 'string') return dataObj.detail;
+        if (typeof dataObj.detail === 'object' && dataObj.detail !== null) {
+          const detailObj = dataObj.detail as Record<string, unknown>;
+          return (detailObj.message as string) || JSON.stringify(dataObj.detail);
+        }
       }
-      if (data.error && typeof data.error === 'object') return data.error.message || JSON.stringify(data.error);
+      if (dataObj.error && typeof dataObj.error === 'object' && dataObj.error !== null) {
+        const errorObj = dataObj.error as Record<string, unknown>;
+        return (errorObj.message as string) || JSON.stringify(dataObj.error);
+      }
       return JSON.stringify(data);
     };
 

@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize OpenAI client with custom base URL for AI Studio
 api_key = os.getenv("OPENAI_API_KEY")
-base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+base_url = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
 client = OpenAI(api_key=api_key, base_url=base_url)
 
 # Define MCP tools for OpenAI function calling

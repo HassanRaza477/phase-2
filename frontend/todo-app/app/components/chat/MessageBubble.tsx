@@ -14,9 +14,8 @@ import { MessageBubbleProps } from '@/types/chat';
  * @param isLatest - Whether this is the latest message (for auto-scroll)
  */
 export default function MessageBubble({
-  message,
-  isLatest
-}: MessageBubbleProps) {
+  message
+}: Omit<MessageBubbleProps, 'isLatest'>) {
   const isUser = message.role === 'user';
 
   // Format timestamp as HH:MM AM/PM
@@ -28,7 +27,7 @@ export default function MessageBubble({
         minute: '2-digit',
         hour12: true,
       });
-    } catch (e) {
+    } catch {
       return '';
     }
   };

@@ -11,8 +11,8 @@
 export interface ToolCall {
   tool_id: string;
   tool_name: string;
-  arguments: Record<string, any>;
-  result?: Record<string, any>;
+  arguments: Record<string, unknown>;
+  result?: Record<string, unknown>;
   success?: boolean;
   error?: string;
 }
@@ -32,6 +32,7 @@ export interface Message {
  * API response from POST /api/{user_id}/chat endpoint.
  */
 export interface ChatResponse {
+  success: boolean;
   conversation_id: string;
   message_id: string;
   response: string;
@@ -115,7 +116,7 @@ export interface ErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   };
 }
 
@@ -124,9 +125,9 @@ export interface ErrorResponse {
  */
 export class ChatAPIError extends Error {
   code: string;
-  details?: any;
+  details?: unknown;
 
-  constructor(code: string, message: string, details?: any) {
+  constructor(code: string, message: string, details?: unknown) {
     super(message);
     this.name = 'ChatAPIError';
     this.code = code;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { tasksAPI } from '../api/client';
@@ -288,6 +288,38 @@ export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
+  const fetchTasks = useCallback(async () => {
+    // Guard: don't fetch if not authenticated
+    if (!isAuthenticated) {
+      console.warn('[Dashboard] fetchTasks called while not authenticated — skipping');
+      setLoading(false);
+      return;
+    }
+
+    setNetworkError(null);
+    setLoading(true);
+
+    try {
+      const data = await tasksAPI.getTasks();
+      setTasks(data);
+      console.log(`[Dashboard] Loaded ${data.length} tasks`);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      const message = errorObj?.message || 'Failed to load tasks. Check your connection and try again.';
+      console.error('[Dashboard] fetchTasks error:', {
+        message,
+        error: err,
+      });
+      setNetworkError(message);
+      // Only show toast if it's not a timeout (too spammy)
+      if (!message.includes('timed out')) {
+        toast.error(message, { duration: 6000 });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
@@ -298,7 +330,7 @@ export default function DashboardPage() {
     if (isAuthenticated && !isLoading) {
       fetchTasks();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, fetchTasks]);
 
   // Sync listener: re-fetch when chatbot makes changes
   useEffect(() => {
@@ -337,38 +369,7 @@ export default function DashboardPage() {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [isAuthenticated]);
-
-  const fetchTasks = async () => {
-    // Guard: don't fetch if not authenticated
-    if (!isAuthenticated) {
-      console.warn('[Dashboard] fetchTasks called while not authenticated — skipping');
-      setLoading(false);
-      return;
-    }
-
-    setNetworkError(null);
-    setLoading(true);
-
-    try {
-      const data = await tasksAPI.getTasks();
-      setTasks(data);
-      console.log(`[Dashboard] Loaded ${data.length} tasks`);
-    } catch (err: any) {
-      const message = err?.message || 'Failed to load tasks. Check your connection and try again.';
-      console.error('[Dashboard] fetchTasks error:', {
-        message,
-        error: err,
-      });
-      setNetworkError(message);
-      // Only show toast if it's not a timeout (too spammy)
-      if (!message.includes('timed out')) {
-        toast.error(message, { duration: 6000 });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isAuthenticated, fetchTasks]);
 
   // Filtered tasks based on search and status
   const filteredTasks = useMemo(() => {
@@ -396,9 +397,10 @@ export default function DashboardPage() {
       const newTask = await tasksAPI.createTask(data);
       setTasks(prev => [newTask, ...prev]);
       toast.success('Task created successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Create task error:', err);
-      const message = err.message || 'Failed to create task';
+      const errorObj = err as { message?: string };
+      const message = errorObj.message || 'Failed to create task';
       toast.error(message);
       throw err;
     }
@@ -413,8 +415,9 @@ export default function DashboardPage() {
       setQuickAddTitle('');
       setIsQuickAddOpen(false);
       toast.success('Task added!');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to add task');
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      toast.error(errorObj.message || 'Failed to add task');
     }
   };
 
@@ -424,9 +427,10 @@ export default function DashboardPage() {
       const updatedTask = await tasksAPI.updateTask(editingTask.id, data);
       setTasks(prev => prev.map(t => t.id === editingTask.id ? updatedTask : t));
       toast.success('Task updated successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Update task error:', err);
-      const message = err.message || 'Failed to update task';
+      const errorObj = err as { message?: string };
+      const message = errorObj.message || 'Failed to update task';
       toast.error(message);
       throw err;
     } finally {
@@ -446,9 +450,10 @@ export default function DashboardPage() {
     try {
       await tasksAPI.toggleTask(taskId);
       toast.success(taskToToggle.completed ? 'Task marked pending' : 'Task completed!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Toggle task error:', err);
-      toast.error(err.message || 'Failed to update task');
+      const errorObj = err as { message?: string };
+      toast.error(errorObj.message || 'Failed to update task');
       setTasks(originalTasks);
     }
   };
@@ -462,9 +467,10 @@ export default function DashboardPage() {
     try {
       await tasksAPI.deleteTask(taskId);
       toast.success('Task deleted');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Delete task error:', err);
-      toast.error(err.message || 'Failed to delete task');
+      const errorObj = err as { message?: string };
+      toast.error(errorObj.message || 'Failed to delete task');
       setTasks(originalTasks);
     }
   };

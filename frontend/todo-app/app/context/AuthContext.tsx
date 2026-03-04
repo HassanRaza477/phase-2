@@ -3,12 +3,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI } from '../api/client';
-import { UserLogin, UserCreate } from '@/types';
+import { UserLogin, UserCreate, User } from '@/types';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any | null;
+  user: User | null;
   login: (credentials: UserLogin) => Promise<void>;
   register: (credentials: UserCreate) => Promise<void>;
   logout: () => void;
@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -46,8 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('token', response.access_token);
       setIsAuthenticated(true);
       router.push('/dashboard');
-    } catch (err: any) {
-      const message = err?.detail || err?.message || 'Login failed. Please try again.';
+    } catch (err: unknown) {
+      const errorObj = err as { detail?: string; message?: string };
+      const message = errorObj?.detail || errorObj?.message || 'Login failed. Please try again.';
       setError(message);
       throw err;
     } finally {
@@ -62,8 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authAPI.register(credentials);
       // Auto-login after registration
       await login(credentials);
-    } catch (err: any) {
-      const message = err?.detail || err?.message || 'Registration failed. Please try again.';
+    } catch (err: unknown) {
+      const errorObj = err as { detail?: string; message?: string };
+      const message = errorObj?.detail || errorObj?.message || 'Registration failed. Please try again.';
       setError(message);
       throw err;
     } finally {

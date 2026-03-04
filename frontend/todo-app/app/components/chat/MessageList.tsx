@@ -53,7 +53,7 @@ export default function MessageList({
           </div>
           <h2 className="text-2xl font-bold text-[#0C5446] mb-2">How can I help you today?</h2>
           <p className="text-[#0C5446]/60 leading-relaxed">
-            I'm your TaskFlow assistant. Ask me to add tasks, list your pending items, or help organize your day.
+            I&apos;m your TaskFlow assistant. Ask me to add tasks, list your pending items, or help organize your day.
           </p>
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
             {['"Add a task to buy tea"', '"Show my tasks"', '"Complete task 5"', '"Delete old tasks"'].map((hint, i) => (
@@ -76,11 +76,10 @@ export default function MessageList({
     >
       <div className="flex flex-col min-h-full">
         <AnimatePresence initial={false}>
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <MessageBubble
               key={message.id}
               message={message}
-              isLatest={index === messages.length - 1}
             />
           ))}
         </AnimatePresence>

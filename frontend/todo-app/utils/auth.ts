@@ -75,13 +75,23 @@ export function clearAuthData(): void {
 }
 
 /**
+ * JWT Payload structure
+ */
+export interface JWTPayload {
+  sub: string;
+  exp: number;
+  iat?: number;
+  [key: string]: unknown;
+}
+
+/**
  * Decode a JWT token to extract payload information.
  * Note: This does not verify the token signature.
  * 
  * @param token - The JWT token to decode
  * @returns The decoded payload or null if invalid
  */
-export function decodeToken(token: string): any | null {
+export function decodeToken(token: string): JWTPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
@@ -90,7 +100,7 @@ export function decodeToken(token: string): any | null {
 
     const payload = parts[1];
     const decoded = atob(payload);
-    return JSON.parse(decoded);
+    return JSON.parse(decoded) as JWTPayload;
   } catch {
     return null;
   }

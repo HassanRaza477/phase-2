@@ -13,24 +13,25 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-function extractErrorMessage(data: any): { code: string; message: string } {
+function extractErrorMessage(data: unknown): { code: string; message: string } {
   if (!data) return { code: 'UNKNOWN_ERROR', message: ERROR_MESSAGES.UNKNOWN_ERROR };
 
-  if (data.success === false && data.message) {
-    return { code: data.code || 'API_ERROR', message: data.message };
+  const dataObj = data as Record<string, any>;
+  if (dataObj.success === false && dataObj.message) {
+    return { code: dataObj.code || 'API_ERROR', message: dataObj.message };
   }
 
-  if (data.detail) {
-    if (typeof data.detail === 'string') return { code: 'API_ERROR', message: data.detail };
-    if (typeof data.detail === 'object' && !Array.isArray(data.detail)) {
+  if (dataObj.detail) {
+    if (typeof dataObj.detail === 'string') return { code: 'API_ERROR', message: dataObj.detail };
+    if (typeof dataObj.detail === 'object' && !Array.isArray(dataObj.detail)) {
       return {
-        code: data.detail.code || 'API_ERROR',
-        message: data.detail.message || JSON.stringify(data.detail)
+        code: dataObj.detail.code || 'API_ERROR',
+        message: dataObj.detail.message || JSON.stringify(dataObj.detail)
       };
     }
   }
 
-  if (data.message) return { code: 'API_ERROR', message: data.message };
+  if (dataObj.message) return { code: 'API_ERROR', message: dataObj.message };
 
   return { code: 'UNKNOWN_ERROR', message: ERROR_MESSAGES.UNKNOWN_ERROR };
 }
@@ -43,7 +44,7 @@ export function handleAPIError(error: AxiosError): never {
   }
 
   const { status, data } = error.response;
-  const { code, message } = extractErrorMessage(data as any);
+  const { code, message } = extractErrorMessage(data);
 
   if (status === 401) {
     if (typeof window !== 'undefined') {
@@ -76,14 +77,14 @@ export class ChatService {
         ...(conversationId && { conversation_id: conversationId }),
       };
 
-      const response = await axios.post<any>(
+      const response = await axios.post<unknown>(
         `${API_BASE_URL}/api/chat`,
         request,
         { headers: this.getAuthHeaders(), timeout: 120000 }
       );
 
       // Backend returns standardized format: { success: true, ... }
-      const data = response.data;
+      const data = response.data as ChatResponse;
       if (data.success) return data;
       return data; // Fallback
     } catch (error) {
@@ -93,16 +94,16 @@ export class ChatService {
 
   async getConversation(conversationId: string): Promise<ConversationWithMessages> {
     try {
-      const response = await axios.get<any>(
+      const response = await axios.get<unknown>(
         `${API_BASE_URL}/api/conversations/${conversationId}`,
         { headers: this.getAuthHeaders(), timeout: 15000 }
       );
 
-      const data = response.data;
+      const data = response.data as { success: boolean; data: ConversationWithMessages };
       if (data.success && data.data) {
         return data.data;
       }
-      return data;
+      return data as unknown as ConversationWithMessages;
     } catch (error) {
       return handleAPIError(error as AxiosError);
     }
@@ -110,7 +111,7 @@ export class ChatService {
 
   async listConversations(limit: number = 20, offset: number = 0): Promise<{ conversations: any[]; total: number }> {
     try {
-      const response = await axios.get<any>(
+      const response = await axios.get<unknown>(
         `${API_BASE_URL}/api/conversations`,
         {
           params: { limit, offset },
@@ -118,9 +119,9 @@ export class ChatService {
           timeout: 10000,
         }
       );
-      const data = response.data;
+      const data = response.data as { success: boolean; data: { conversations: any[]; total: number } };
       if (data.success && data.data) return data.data;
-      return data;
+      return data as unknown as { conversations: any[]; total: number };
     } catch (error) {
       return handleAPIError(error as AxiosError);
     }

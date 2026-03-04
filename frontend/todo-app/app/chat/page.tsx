@@ -29,28 +29,6 @@ export default function ChatPage() {
   // Store last message for retry functionality
   const lastMessageRef = useRef<string | null>(null);
 
-  // Initialize chat service with token
-  useEffect(() => {
-    const token = getToken();
-    if (token) {
-      setChatService(createChatService(token));
-    }
-  }, []);
-
-  // Check authentication and load conversation on mount
-  useEffect(() => {
-    if (authLoading) return;
-
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
-    if (!chatService) return;
-
-    loadConversation();
-  }, [isAuthenticated, authLoading, chatService]);
-
   /**
    * Load existing conversation from localStorage and API.
    */
@@ -193,6 +171,28 @@ export default function ChatPage() {
       }
     }
   }, [chatService, state.conversationId, router]);
+
+  // Initialize chat service with token
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      setChatService(createChatService(token));
+    }
+  }, []);
+
+  // Check authentication and load conversation on mount
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
+    if (!chatService) return;
+
+    loadConversation();
+  }, [isAuthenticated, authLoading, chatService, loadConversation, router]);
 
   /**
    * Retry sending the last failed message.
