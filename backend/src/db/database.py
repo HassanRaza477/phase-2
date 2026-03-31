@@ -30,3 +30,8 @@ def get_db():
         raise
     finally:
         db.close()
+
+def init_db():
+    """Initialize the database by creating all tables."""
+    from ..models import User, Task, Conversation, Message  # Import models here to avoid circular imports
+    Base.metadata.create_all(bind=engine)

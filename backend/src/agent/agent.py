@@ -28,7 +28,14 @@ logger = logging.getLogger(__name__)
 # Initialize OpenAI client with custom base URL for AI Studio
 api_key = os.getenv("OPENAI_API_KEY")
 base_url = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
-client = OpenAI(api_key=api_key, base_url=base_url)
+client = OpenAI(
+    api_key=api_key, 
+    base_url=base_url,
+    default_headers={
+        "HTTP-Referer": "http://localhost:3000", # Optional, for OpenRouter rankings
+        "X-Title": "Todo AI App",                # Optional, for OpenRouter rankings
+    }
+)
 
 # Define MCP tools for OpenAI function calling
 OPENAI_TOOLS = [
@@ -203,7 +210,7 @@ async def process_agent_message(
             
             def call_openai():
                 return client.chat.completions.create(
-                    model=os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview"),
+                    model=os.getenv("OPENAI_MODEL", "google/gemini-2.0-flash-exp:free"),
                     messages=messages,
                     tools=OPENAI_TOOLS,
                     tool_choice="auto",
@@ -267,8 +274,12 @@ async def process_agent_message(
         }
         
     except Exception as e:
-        logger.error(f"Error in agent message processing: {str(e)}", exc_info=True)
-        raise
+        error_msg = str(e)
+        if "401" in error_msg:
+            logger.error(f"External AI service authentication failed: {error_msg}")
+            raise Exception(f"External AI Service authentication error (OpenRouter 401). Please check your OPENAI_API_KEY in the backend .env file. Details: {error_msg}")
+        logger.error(f"Error in agent message processing: {error_msg}", exc_info=True)
+        raise Exception(f"AI agent error: {error_msg}")
 
 
 async def execute_mcp_tool(

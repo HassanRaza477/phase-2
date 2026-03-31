@@ -1,6 +1,6 @@
 // app/api/client.ts
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { UserCreate, UserLogin, Task, TaskCreate, TaskUpdate } from '@/types';
+import { UserCreate, UserLogin, Task, TaskCreate, TaskUpdate, SortOption } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -90,8 +90,34 @@ export const authAPI = {
 
 // ─── Tasks API ────────────────────────────────────────────────────────────────
 export const tasksAPI = {
-  getTasks: async (): Promise<Task[]> => {
-    const res = await apiClient.get<Task[]>('/api/tasks');
+  getTasks: async (params?: {
+    priority?: 'high' | 'medium' | 'low' | 'all';
+    tag?: string;
+    search?: string;
+    status?: 'all' | 'pending' | 'completed';
+    sort?: SortOption;
+  }): Promise<Task[]> => {
+    const queryParams = new URLSearchParams();
+
+    if (params?.priority && params.priority !== 'all') {
+      queryParams.append('priority', params.priority);
+    }
+    if (params?.tag) {
+      queryParams.append('tag', params.tag);
+    }
+    if (params?.search) {
+      queryParams.append('search', params.search);
+    }
+    if (params?.status && params.status !== 'all') {
+      queryParams.append('status', params.status);
+    }
+    if (params?.sort) {
+      queryParams.append('sort', params.sort);
+    }
+
+    const res = await apiClient.get<Task[]>(
+      `/api/tasks${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    );
     return res.data;
   },
 
@@ -113,6 +139,20 @@ export const tasksAPI = {
     const res = await apiClient.patch<Task>(`/api/tasks/${id}/toggle`);
     return res.data;
   },
+};
+
+// ─── Chat API ─────────────────────────────────────────────────────────────────
+export const chatAPI = {
+  sendMessage: (data: { message: string; conversation_id?: string }) =>
+    apiClient.post<any>('/api/chat', data).then(res => res.data),
+};
+
+// ─── Conversations API ────────────────────────────────────────────────────────
+export const conversationsAPI = {
+  list: (params?: { limit?: number; offset?: number }) =>
+    apiClient.get<any>('/api/conversations', { params }).then(res => res.data),
+  get: (id: string) =>
+    apiClient.get<any>(`/api/conversations/${id}`).then(res => res.data),
 };
 
 export default apiClient;

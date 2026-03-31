@@ -191,6 +191,15 @@ def invoke_mcp_tool(
 async def startup():
     logger.info("=" * 60)
     logger.info("Starting Task Manager API...")
+    
+    # Initialize database tables
+    try:
+        from .db.database import init_db
+        logger.info("Initializing database tables...")
+        init_db()
+        logger.info("Database initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
     logger.info(f"  DATABASE_URL set: {'Yes' if os.getenv('DATABASE_URL') else 'NO - MISSING!'}")
     logger.info(f"  SECRET_KEY set:   {'Yes' if os.getenv('SECRET_KEY') else 'NO - MISSING!'}")
     logger.info(f"  OPENAI_API_KEY:   {'Yes' if os.getenv('OPENAI_API_KEY') else 'NO - AI will fail'}")

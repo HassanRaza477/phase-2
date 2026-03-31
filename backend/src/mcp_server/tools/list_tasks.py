@@ -7,9 +7,9 @@ Retrieves all tasks belonging to the authenticated user with optional status fil
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from src.models import Task
-from src.mcp_server.schemas.responses import TaskData, ListTasksResponse, ErrorResponse
-from src.mcp_server.server import mcp_server
+from ...models import Task
+from ..schemas.responses import TaskData, ListTasksResponse, ErrorResponse
+from ..server import mcp_server
 
 logger = logging.getLogger(__name__)
 

@@ -86,7 +86,7 @@ async def chat(
         .limit(50)
     ).scalars().all()
 
-    message_history = [{"role": msg.role, "content": msg.content} for msg in messages]
+    message_history = [{"role": msg.role, "content": msg.content or ""} for msg in messages]
 
     # ── Call AI Agent ──
     try:
