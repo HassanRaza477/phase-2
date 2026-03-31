@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { ChatService, createChatService } from '@/services/api/chat.service';
 import { Message, ChatState, initialChatState, ChatAPIError, ERROR_MESSAGES } from '@/types/chat';
-import { getToken, getConversationId, saveConversationId, clearAuthData } from '@/utils/auth';
+import { getToken, getConversationId, saveConversationId, removeConversationId, clearAuthData } from '@/utils/auth';
 import MessageList from '@/app/components/chat/MessageList';
 import ChatInput from '@/app/components/chat/ChatInput';
 import ErrorAlert from '@/app/components/chat/ErrorAlert';
-import Header from '@/app/components/Header';
+
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -67,7 +67,10 @@ export default function ChatPage() {
       }
 
       // Start fresh if conversation not found
-      if (error instanceof ChatAPIError && error.code === 'CONVERSATION_NOT_FOUND') {
+      const isNotFound = error instanceof ChatAPIError && 
+                        (error.code === 'CONVERSATION_NOT_FOUND' || error.message.includes('Conversation not found') || error.message.includes('Error 404'));
+      if (isNotFound) {
+        removeConversationId();
         setState(prev => ({ ...prev, isLoading: false, error: null, hasLoaded: true }));
         return;
       }
@@ -224,7 +227,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-[#FCFAEF]">
-      <Header />
 
       <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full overflow-hidden border-x border-[#DBD0BD]/30 bg-white shadow-2xl relative">
         {/* Decorative background element */}
@@ -249,7 +251,7 @@ export default function ChatPage() {
         </AnimatePresence>
 
         {/* Message List Area */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
           <MessageList
             messages={state.messages}
             isLoading={state.isLoading}

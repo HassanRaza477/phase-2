@@ -4,9 +4,19 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { tasksAPI } from '../api/client';
-import { Task, TaskCreate, TaskUpdate } from '@/types';
+import { Task, TaskCreate, TaskUpdate, SortOption } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
-import Header from '../components/Header';
+
+import {
+  PriorityBadge,
+  PrioritySelector,
+  TagBadge,
+  TagsInput,
+  PriorityFilter,
+  TagFilter,
+  FilterBar,
+  SortSelector,
+} from '../components/task';
 
 // Icons (customized with theme colors)
 const PlusIcon = ({ className = "w-5 h-5" }) => (
@@ -36,18 +46,6 @@ const EditIcon = ({ className = "w-5 h-5" }) => (
 const DeleteIcon = ({ className = "w-5 h-5" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-  </svg>
-);
-
-const SearchIcon = ({ className = "w-5 h-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-  </svg>
-);
-
-const FilterIcon = ({ className = "w-5 h-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
   </svg>
 );
 
@@ -82,20 +80,27 @@ interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: TaskCreate) => Promise<void>;
-  initialData?: TaskCreate;
+  initialData?: TaskCreate & { tags?: string[] };
   title: string;
   submitText: string;
 }
 
 const TaskModal = ({ isOpen, onClose, onSubmit, initialData, title, submitText }: TaskModalProps) => {
-  const [formData, setFormData] = useState<TaskCreate>(initialData || { title: '', description: '' });
+  const [formData, setFormData] = useState<TaskCreate & { tags?: string[] }>(
+    initialData || { title: '', description: '', priority: 'medium', tags: [] }
+  );
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        title: initialData.title || '',
+        description: initialData.description || '',
+        priority: initialData.priority || 'medium',
+        tags: initialData.tags || [],
+      });
     } else {
-      setFormData({ title: '', description: '' });
+      setFormData({ title: '', description: '', priority: 'medium', tags: [] });
     }
   }, [initialData, isOpen]);
 
@@ -120,7 +125,7 @@ const TaskModal = ({ isOpen, onClose, onSubmit, initialData, title, submitText }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-20 backdrop-blur-sm">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-[#DBD0BD] transform transition-all">
+      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-[#DBD0BD] transform transition-all max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-[#0C5446] mb-4">{title}</h3>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -152,6 +157,19 @@ const TaskModal = ({ isOpen, onClose, onSubmit, initialData, title, submitText }
                 placeholder="Add details..."
               />
             </div>
+            <PrioritySelector
+              label="Priority"
+              value={formData.priority || 'medium'}
+              onChange={(priority) => setFormData({ ...formData, priority })}
+              disabled={submitting}
+            />
+            <TagsInput
+              label="Tags"
+              value={formData.tags || []}
+              onChange={(tags) => setFormData({ ...formData, tags })}
+              disabled={submitting}
+              maxTags={10}
+            />
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button
@@ -204,11 +222,14 @@ const TaskCard = ({ task, onToggle, onEdit, onDelete }: {
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
 }) => {
+  const displayedTags = task.tags?.slice(0, 3) || [];
+  const remainingTagsCount = (task.tags?.length || 0) - 3;
+
   return (
     <div className="group bg-white rounded-xl border border-[#DBD0BD] p-5 hover:shadow-lg transition-all hover:border-[#FF6700]/30 hover:-translate-y-1">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-[#0C5446]/40' : 'text-[#0C5446]'}`}>
               {task.title}
             </h3>
@@ -220,11 +241,27 @@ const TaskCard = ({ task, onToggle, onEdit, onDelete }: {
             >
               {task.completed ? 'Completed' : 'Pending'}
             </span>
+            {task.priority && (
+              <PriorityBadge priority={task.priority} showLabel={true} />
+            )}
           </div>
           {task.description && (
             <p className={`mt-1 text-sm ${task.completed ? 'text-[#0C5446]/40' : 'text-[#0C5446]/70'}`}>
               {task.description}
             </p>
+          )}
+          {/* Tags */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {displayedTags.map((tag) => (
+                <TagBadge key={tag} tag={tag} />
+              ))}
+              {remainingTagsCount > 0 && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                  +{remainingTagsCount} more
+                </span>
+              )}
+            </div>
           )}
           <p className="text-xs text-[#0C5446]/40 mt-2">
             Created: {new Date(task.created_at).toLocaleDateString()}
@@ -280,6 +317,11 @@ export default function DashboardPage() {
   // Advanced: search & filter
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed'>('all');
+  const [filterPriority, setFilterPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [filterTag, setFilterTag] = useState('');
+  
+  // Sort state
+  const [sortOption, setSortOption] = useState<SortOption>('created_at');
 
   // Quick add
   const [quickAddTitle, setQuickAddTitle] = useState('');
@@ -300,9 +342,34 @@ export default function DashboardPage() {
     setLoading(true);
 
     try {
-      const data = await tasksAPI.getTasks();
+      // Build filter params
+      const filterParams: {
+        priority?: 'high' | 'medium' | 'low';
+        tag?: string;
+        search?: string;
+        status?: 'all' | 'pending' | 'completed';
+        sort?: SortOption;
+      } = {};
+
+      if (filterPriority !== 'all') {
+        filterParams.priority = filterPriority;
+      }
+      if (filterTag.trim()) {
+        filterParams.tag = filterTag.trim();
+      }
+      if (searchQuery.trim()) {
+        filterParams.search = searchQuery.trim();
+      }
+      if (filterStatus !== 'all') {
+        filterParams.status = filterStatus;
+      }
+      if (sortOption) {
+        filterParams.sort = sortOption;
+      }
+
+      const data = await tasksAPI.getTasks(filterParams);
       setTasks(data);
-      console.log(`[Dashboard] Loaded ${data.length} tasks`);
+      console.log(`[Dashboard] Loaded ${data.length} tasks with filters:`, filterParams);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       const message = errorObj?.message || 'Failed to load tasks. Check your connection and try again.';
@@ -318,7 +385,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, filterPriority, filterTag, searchQuery, filterStatus, sortOption]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -371,21 +438,11 @@ export default function DashboardPage() {
     };
   }, [isAuthenticated, fetchTasks]);
 
-  // Filtered tasks based on search and status
+  // Filtered tasks - now using server-side filtering
+  // The API returns already filtered data based on filter params
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-
-      const matchesStatus =
-        filterStatus === 'all' ? true :
-          filterStatus === 'completed' ? task.completed :
-            !task.completed;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [tasks, searchQuery, filterStatus]);
+    return tasks;
+  }, [tasks]);
 
   // Stats
   const totalTasks = tasks.length;
@@ -421,10 +478,15 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpdateTask = async (data: TaskCreate) => {
+  const handleUpdateTask = async (data: TaskCreate & { tags?: string[] }) => {
     if (!editingTask) return;
     try {
-      const updatedTask = await tasksAPI.updateTask(editingTask.id, data);
+      const updatedTask = await tasksAPI.updateTask(editingTask.id, {
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        tags: data.tags,
+      });
       setTasks(prev => prev.map(t => t.id === editingTask.id ? updatedTask : t));
       toast.success('Task updated successfully!');
     } catch (err: unknown) {
@@ -502,8 +564,6 @@ export default function DashboardPage() {
       />
 
       {/* Header - ab onLogout prop nahi diya, kyunke Header khud useAuth use karta hai */}
-      <Header />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Title and Create Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -540,31 +600,31 @@ export default function DashboardPage() {
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="bg-white rounded-xl border border-[#DBD0BD] p-4 mb-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0C5446]/40 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#FCFAEF] border border-[#DBD0BD] rounded-lg text-[#0C5446] placeholder-[#0C5446]/40 focus:outline-none focus:ring-2 focus:ring-[#FF6700] focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <FilterIcon className="text-[#0C5446]/60 w-5 h-5" />
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-3 py-2 bg-[#FCFAEF] border border-[#DBD0BD] rounded-lg text-[#0C5446] focus:outline-none focus:ring-2 focus:ring-[#FF6700]"
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-          </div>
+        <FilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterStatus={filterStatus}
+          onStatusChange={setFilterStatus}
+          filterPriority={filterPriority}
+          onPriorityChange={setFilterPriority}
+          filterTag={filterTag}
+          onTagChange={setFilterTag}
+          onClearAll={() => {
+            setSearchQuery('');
+            setFilterStatus('all');
+            setFilterPriority('all');
+            setFilterTag('');
+          }}
+          className="mb-6"
+        />
+
+        {/* Sort Selector */}
+        <div className="mb-6">
+          <SortSelector
+            value={sortOption}
+            onChange={setSortOption}
+            id="dashboard-sort-selector"
+          />
         </div>
 
         {/* Quick Add */}
@@ -623,7 +683,12 @@ export default function DashboardPage() {
           isOpen={!!editingTask}
           onClose={() => setEditingTask(null)}
           onSubmit={handleUpdateTask}
-          initialData={editingTask ? { title: editingTask.title, description: editingTask.description } : undefined}
+          initialData={editingTask ? {
+            title: editingTask.title,
+            description: editingTask.description,
+            priority: editingTask.priority || 'medium',
+            tags: editingTask.tags || [],
+          } : undefined}
           title="Edit Task"
           submitText="Update Task"
         />
@@ -638,10 +703,23 @@ export default function DashboardPage() {
             <EmptyStateIcon />
             <h3 className="text-lg font-medium text-[#0C5446] mb-2">No tasks found</h3>
             <p className="text-[#0C5446]/60 mb-4">
-              {searchQuery || filterStatus !== 'all'
-                ? 'Try adjusting your search or filter'
+              {searchQuery || filterPriority !== 'all' || filterTag || filterStatus !== 'all'
+                ? 'Try adjusting your search or filters, or clear them to see all tasks'
                 : 'Get started by creating your first task'}
             </p>
+            {(searchQuery || filterPriority !== 'all' || filterTag || filterStatus !== 'all') && (
+              <button
+                onClick={() => {
+                  setFilterPriority('all');
+                  setFilterTag('');
+                  setSearchQuery('');
+                  setFilterStatus('all');
+                }}
+                className="px-4 py-2 text-sm text-[#FF6700] hover:text-[#e55c00] font-medium transition-colors mb-4"
+              >
+                Clear all filters
+              </button>
+            )}
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="px-4 py-2 bg-[#FF6700] text-white rounded-lg hover:bg-[#e55c00] inline-flex items-center gap-2 transition-all transform hover:scale-105"

@@ -44,3 +44,6 @@ class MCPServer:
 
 # Create global MCP server instance
 mcp_server = MCPServer()
+
+# Import tools to trigger registration
+from .tools import add_task, list_tasks, update_task, delete_task, complete_task

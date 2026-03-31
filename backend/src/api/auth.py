@@ -15,7 +15,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     try:
         new_user = AuthService.create_user(db, user)
         # Convert to Pydantic for serialization if needed, or return dict
-        user_data = UserResponse.from_orm(new_user).model_dump()
+        user_data = UserResponse.model_validate(new_user).model_dump()
         return {
             "success": True,
             "message": "User registered successfully",
@@ -46,7 +46,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         
         # Get user for additional data
         db_user = db.query(User).filter(User.email == user.email).first()
-        user_info = UserResponse.from_orm(db_user).model_dump()
+        user_info = UserResponse.model_validate(db_user).model_dump()
         
         return {
             "success": True,

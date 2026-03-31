@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './context/AuthContext';
 import LandingPage from './components/home';
-import Header from './components/Header';
+
 
 export default function HomePage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function HomePage() {
   return (
     <>
 
-    <Header/>
+    
     <LandingPage /></>
   );
 }
